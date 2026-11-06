@@ -1,0 +1,419 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7ff">
+  <title>Compressly — Smart PDF Compressor</title>
+  <meta name="description" content="Compress PDF files in your browser with adjustable quality settings. Your files stay on your device.">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <style>
+    :root {
+      --page: #f7f7ff;
+      --surface: rgba(255,255,255,.92);
+      --ink: #17172f;
+      --muted: #73758c;
+      --line: #e7e7f2;
+      --primary: #6657e8;
+      --primary-dark: #5142cf;
+      --primary-soft: #f0eeff;
+      --green: #16865c;
+      --green-soft: #eaf8f1;
+      --orange: #a95318;
+      --orange-soft: #fff4e9;
+      --shadow: 0 24px 70px rgba(49, 43, 111, .11);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh; padding: 34px 18px 28px;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(190,184,255,.28), transparent 34%),
+        radial-gradient(ellipse at 95% 15%, rgba(207,225,255,.55), transparent 30%),
+        var(--page);
+    }
+    button, input { font: inherit; }
+    .page-shell { width: min(100%, 1060px); margin: 0 auto; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:42px; }
+    .brand { display:flex; align-items:center; gap:11px; color:var(--ink); text-decoration:none; font-size:19px; font-weight:800; letter-spacing:-.6px; }
+    .brand-mark { display:grid; place-items:center; width:42px; height:42px; border-radius:14px; color:white; background:linear-gradient(145deg,#8175ff,#5b4bd7); box-shadow:0 8px 18px rgba(102,87,232,.25); }
+    .privacy-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 13px; border:1px solid #dcefe5; border-radius:999px; background:rgba(255,255,255,.72); color:#24724f; font-size:12px; font-weight:700; }
+    .privacy-pill i { font-size:12px; }
+    .hero { text-align:center; max-width:720px; margin:0 auto 28px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; margin-bottom:15px; border:1px solid #e2dfff; border-radius:999px; background:#fff; color:var(--primary-dark); font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+    .eyebrow i { font-size:12px; }
+    h1 { margin:0; font-size:clamp(34px,5vw,54px); line-height:1.08; letter-spacing:-2.3px; font-weight:850; }
+    h1 span { color:var(--primary); }
+    .hero-copy { max-width:570px; margin:17px auto 0; color:var(--muted); font-size:16px; line-height:1.7; }
+    .workspace { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(275px,.75fr); gap:20px; align-items:start; }
+    .panel { border:1px solid rgba(226,226,242,.95); border-radius:24px; background:var(--surface); box-shadow:var(--shadow); backdrop-filter:blur(14px); }
+    .main-panel { padding:clamp(20px,3.4vw,34px); }
+    .panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:22px; }
+    h2 { margin:0; font-size:19px; letter-spacing:-.5px; }
+    .section-sub { margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
+    .step-label { flex:none; color:#8989a1; font-size:12px; font-weight:750; }
+    .drop {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-height:225px; padding:26px 18px; border:1.5px dashed #c9c5f8; border-radius:19px;
+      background:linear-gradient(145deg,#faf9ff,#f5f4ff); text-align:center; cursor:pointer;
+      transition:border-color .2s, background .2s, transform .2s, box-shadow .2s; outline:none;
+    }
+    .drop:hover, .drop:focus-visible, .drop.over { border-color:var(--primary); background:#f0eeff; box-shadow:0 0 0 4px rgba(102,87,232,.08); }
+    .drop.over { transform:scale(1.006); }
+    .upload-icon { display:grid; place-items:center; width:57px; height:57px; margin-bottom:14px; border-radius:18px; background:white; color:var(--primary); box-shadow:0 7px 22px rgba(74,64,166,.10); font-size:23px; }
+    .drop strong { color:var(--ink); font-size:16px; font-weight:800; }
+    .drop .drop-copy { margin-top:7px; color:var(--muted); font-size:13px; }
+    .browse { color:var(--primary-dark); font-weight:800; text-decoration:underline; text-underline-offset:3px; }
+    .file-types { margin-top:13px; color:#9697ab; font-size:11px; letter-spacing:.02em; }
+    .file-info { display:none; align-items:center; gap:12px; margin-top:14px; padding:13px 14px; border:1px solid var(--line); border-radius:14px; background:#fff; }
+    .file-icon { display:grid; place-items:center; flex:none; width:42px; height:42px; border-radius:12px; background:#fff0f0; color:#df4c56; font-size:18px; }
+    .file-meta { min-width:0; flex:1; }
+    .file-meta b { display:block; overflow-wrap:anywhere; font-size:13px; }
+    .file-meta small { display:block; margin-top:4px; color:var(--muted); font-size:12px; }
+    .file-check { color:var(--green); }
+    .label { margin:25px 0 11px; font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#686a84; }
+    .presets { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .preset-option { position:relative; }
+    .presets input { position:absolute; opacity:0; width:1px; height:1px; }
+    .presets label { display:block; min-height:91px; padding:14px 10px 12px; border:1px solid var(--line); border-radius:15px; background:white; text-align:center; cursor:pointer; transition:.18s ease; }
+    .presets label:hover { border-color:#b9b2ff; transform:translateY(-1px); }
+    .preset-title { display:block; color:var(--ink); font-size:13px; font-weight:800; }
+    .preset-desc { display:block; margin-top:6px; color:var(--muted); font-size:11px; line-height:1.4; }
+    .preset-icon { display:block; margin-bottom:7px; color:var(--primary); font-size:16px; }
+    .presets input:checked + label { border-color:var(--primary); background:var(--primary-soft); box-shadow:inset 0 0 0 1px var(--primary); }
+    .presets input:focus-visible + label { outline:3px solid rgba(102,87,232,.28); outline-offset:3px; }
+    .primary-btn { display:flex; justify-content:center; align-items:center; gap:10px; width:100%; min-height:53px; margin-top:23px; padding:14px 18px; border:0; border-radius:14px; background:linear-gradient(105deg,#7465f2,#5848d7); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 10px 20px rgba(102,87,232,.22); transition:transform .18s, box-shadow .18s, opacity .18s; }
+    .primary-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 13px 26px rgba(102,87,232,.3); }
+    .primary-btn:focus-visible, .download-btn:focus-visible { outline:3px solid #a9a1ff; outline-offset:3px; }
+    .primary-btn:disabled { cursor:not-allowed; opacity:.55; box-shadow:none; }
+    .progress-wrap { display:none; margin-top:20px; }
+    .progress-top { display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .progress { height:8px; border-radius:99px; background:#ecebf7; overflow:hidden; }
+    .bar { width:0; height:100%; border-radius:99px; background:linear-gradient(90deg,#9b91ff,#5b4bd7); transition:width .2s; }
+    .status { min-height:20px; margin-top:11px; color:var(--muted); font-size:13px; line-height:1.5; }
+    .result { display:none; margin-top:18px; padding:18px; border:1px solid #c9ead9; border-radius:17px; background:var(--green-soft); }
+    .result.bad { border-color:#f2d5bc; background:var(--orange-soft); }
+    .result-title { display:flex; align-items:center; gap:9px; color:#176f4c; font-size:14px; font-weight:800; }
+    .result.bad .result-title { color:var(--orange); }
+    .sizes { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+    .size-box { padding:12px; border:1px solid rgba(20,130,87,.12); border-radius:12px; background:rgba(255,255,255,.7); }
+    .size-box small { display:block; color:var(--muted); font-size:11px; }
+    .size-box b { display:block; margin-top:5px; font-size:17px; }
+    .saved { margin:16px 0; color:var(--green); font-size:27px; font-weight:850; letter-spacing:-.8px; }
+    .result.bad .saved { color:var(--orange); }
+    .download-btn { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:13px 15px; border-radius:12px; background:#16865c; color:#fff; text-decoration:none; font-size:13px; font-weight:800; }
+    .result.bad .download-btn { background:#a95318; }
+    .side-panel { padding:25px 23px; }
+    .side-heading { margin:0 0 20px; font-size:17px; letter-spacing:-.4px; }
+    .feature { display:flex; gap:12px; margin:18px 0; }
+    .feature-icon { display:grid; place-items:center; flex:none; width:39px; height:39px; border-radius:12px; background:var(--primary-soft); color:var(--primary); }
+    .feature h3 { margin:1px 0 5px; font-size:13px; }
+    .feature p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+    .side-divider { height:1px; margin:22px 0; background:var(--line); }
+    .steps-title { margin:0 0 15px; font-size:14px; }
+    .step { display:flex; align-items:flex-start; gap:10px; margin:12px 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .step-number { display:grid; place-items:center; flex:none; width:23px; height:23px; border-radius:8px; background:#f0efff; color:var(--primary-dark); font-size:11px; font-weight:800; }
+    .notice { padding:12px 13px; border-radius:12px; background:#f7f7fc; color:#73758c; font-size:11px; line-height:1.6; }
+    .footer { display:flex; justify-content:space-between; gap:14px; margin:25px 4px 0; color:#8a8ba0; font-size:11px; line-height:1.6; }
+    .footer span:last-child { text-align:right; }
+    @media (max-width:760px) {
+      body { padding:20px 13px 22px; }
+      .topbar { margin-bottom:34px; }
+      .workspace { grid-template-columns:1fr; }
+      .side-panel { padding:22px; }
+      .features-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+      .side-divider { margin:18px 0; }
+      h1 { letter-spacing:-1.5px; }
+    }
+    @media (max-width:440px) {
+      .brand { font-size:17px; }
+      .brand-mark { width:38px; height:38px; border-radius:12px; }
+      .privacy-pill { padding:8px 9px; font-size:10px; }
+      .hero-copy { font-size:14px; }
+      .main-panel { padding:17px; border-radius:20px; }
+      .presets { gap:6px; }
+      .presets label { padding:12px 5px; }
+      .preset-title { font-size:12px; }
+      .preset-desc { font-size:10px; }
+      .features-grid { grid-template-columns:1fr; }
+      .footer { flex-direction:column; text-align:center; }
+      .footer span:last-child { text-align:center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Compressly home">
+        <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-file-pdf"></i></span>
+        <span>Compressly<span style="color:var(--primary)">.</span></span>
+      </a>
+      <div class="privacy-pill"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Files stay on your device</div>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div class="eyebrow"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Simple. Secure. Smart.</div>
+      <h1>Make your PDFs <span>lighter.</span></h1>
+      <p class="hero-copy">Reduce PDF file size in a few clicks. Choose the quality that works for you and download your compressed document instantly.</p>
+    </section>
+
+    <main class="workspace">
+      <section class="panel main-panel" aria-labelledby="upload-heading">
+        <div class="panel-heading">
+          <div>
+            <h2 id="upload-heading">Compress a PDF</h2>
+            <p class="section-sub">Upload your document to get started.</p>
+          </div>
+          <span class="step-label">STEP 01 / 02</span>
+        </div>
+
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose a PDF file or drag and drop one here" aria-describedby="upload-help">
+          <span class="upload-icon" aria-hidden="true"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+          <strong>Drop your PDF here</strong>
+          <span class="drop-copy">or <span class="browse">browse files</span> on your device</span>
+          <span class="file-types" id="upload-help">PDF files only · No upload to a server</span>
+        </div>
+        <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+        <div class="file-info" id="fileInfo" aria-live="polite">
+          <span class="file-icon" aria-hidden="true"><i class="fa-solid fa-file-pdf"></i></span>
+          <span class="file-meta"><b id="fileName"></b><small id="fileSize"></small></span>
+          <i class="fa-solid fa-circle-check file-check" aria-label="File selected"></i>
+        </div>
+
+        <div class="label">Choose compression level</div>
+        <div class="presets" role="radiogroup" aria-label="Compression level">
+          <div class="preset-option">
+            <input type="radio" name="preset" id="p-low" value="low">
+            <label for="p-low"><i class="fa-solid fa-gem preset-icon" aria-hidden="true"></i><span class="preset-title">High quality</span><span class="preset-desc">Larger file, clearer pages</span></label>
+          </div>
+          <div class="preset-option">
+            <input type="radio" name="preset" id="p-med" value="medium" checked>
+            <label for="p-med"><i class="fa-solid fa-scale-balanced preset-icon" aria-hidden="true"></i><span class="preset-title">Balanced</span><span class="preset-desc">Quality and size</span></label>
+          </div>
+          <div class="preset-option">
+            <input type="radio" name="preset" id="p-high" value="high">
+            <label for="p-high"><i class="fa-solid fa-bolt preset-icon" aria-hidden="true"></i><span class="preset-title">Smallest size</span><span class="preset-desc">More compression</span></label>
+          </div>
+        </div>
+
+        <button class="primary-btn" id="goBtn" disabled><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Compress PDF</button>
+
+        <div class="progress-wrap" id="progressWrap" aria-live="polite">
+          <div class="progress-top"><span id="progressLabel">Preparing your file…</span><b id="progressPercent">0%</b></div>
+          <div class="progress" id="progress" role="progressbar" aria-label="Compression progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" id="bar"></div></div>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+
+        <div class="result" id="result" aria-live="polite">
+          <div class="result-title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span id="resultHeading">Your PDF is ready</span></div>
+          <div class="sizes">
+            <div class="size-box"><small>Original size</small><b id="sizeBefore"></b></div>
+            <div class="size-box"><small>Compressed size</small><b id="sizeAfter"></b></div>
+          </div>
+          <div class="saved" id="saved"></div>
+          <a class="download-btn" id="download" href="#"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
+        </div>
+      </section>
+
+      <aside class="panel side-panel" aria-label="About PDF compression">
+        <h2 class="side-heading">Made for a smoother workflow</h2>
+        <div class="features-grid">
+          <div class="feature">
+            <span class="feature-icon"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+            <div><h3>Private by design</h3><p>Your PDF is processed in this browser, not uploaded to our server.</p></div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon"><i class="fa-solid fa-sliders" aria-hidden="true"></i></span>
+            <div><h3>Your quality, your choice</h3><p>Pick a setting based on the balance you need between clarity and size.</p></div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon"><i class="fa-solid fa-download" aria-hidden="true"></i></span>
+            <div><h3>Quick download</h3><p>Save the processed PDF directly to your device when it is ready.</p></div>
+          </div>
+        </div>
+        <div class="side-divider"></div>
+        <h3 class="steps-title">How it works</h3>
+        <div class="step"><span class="step-number">1</span><span><b>Choose a PDF</b><br>Drop a file or browse your device.</span></div>
+        <div class="step"><span class="step-number">2</span><span><b>Select a level</b><br>Choose high quality, balanced, or smallest size.</span></div>
+        <div class="step"><span class="step-number">3</span><span><b>Download</b><br>Compare file sizes and save your result.</span></div>
+        <div class="notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> This tool redraws each page as an image. Text in the compressed file may no longer be selectable or searchable, and text-heavy PDFs may not become smaller.</div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>© <span id="year"></span> Compressly · PDF compression in your browser</span>
+      <span>For best results, keep a copy of your original PDF.</span>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // These presets trade page sharpness for file size.
+    const PRESETS = {
+      low:    { dpi: 150, quality: 0.80 },
+      medium: { dpi: 110, quality: 0.65 },
+      high:   { dpi: 72,  quality: 0.50 }
+    };
+    const WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const $ = id => document.getElementById(id);
+    const drop = $('drop');
+    const fileInput = $('fileInput');
+    const fileInfo = $('fileInfo');
+    const goBtn = $('goBtn');
+    const progressWrap = $('progressWrap');
+    const progress = $('progress');
+    const bar = $('bar');
+    const statusEl = $('status');
+    const result = $('result');
+    let currentFile = null;
+    let downloadUrl = null;
+    let isCompressing = false;
+
+    $('year').textContent = new Date().getFullYear();
+
+    function fmt(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1048576).toFixed(2) + ' MB';
+    }
+
+    function setProgress(value, label) {
+      const percent = Math.max(0, Math.min(100, Math.round(value)));
+      bar.style.width = percent + '%';
+      progress.setAttribute('aria-valuenow', String(percent));
+      $('progressPercent').textContent = percent + '%';
+      $('progressLabel').textContent = label;
+    }
+
+    function setFile(file) {
+      if (!file) return;
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (!isPdf) {
+        statusEl.textContent = 'Please choose a PDF file (.pdf).';
+        fileInput.value = '';
+        return;
+      }
+      if (isCompressing) return;
+      currentFile = file;
+      $('fileName').textContent = file.name;
+      $('fileSize').textContent = fmt(file.size) + ' · PDF document';
+      fileInfo.style.display = 'flex';
+      goBtn.disabled = false;
+      result.style.display = 'none';
+      progressWrap.style.display = 'none';
+      statusEl.textContent = 'File ready. Choose a compression level, then continue.';
+    }
+
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        fileInput.click();
+      }
+    });
+    fileInput.addEventListener('change', event => setFile(event.target.files[0]));
+    ['dragenter', 'dragover'].forEach(eventName => drop.addEventListener(eventName, event => {
+      event.preventDefault();
+      drop.classList.add('over');
+    }));
+    ['dragleave', 'drop'].forEach(eventName => drop.addEventListener(eventName, event => {
+      event.preventDefault();
+      drop.classList.remove('over');
+    }));
+    drop.addEventListener('drop', event => {
+      const file = event.dataTransfer && event.dataTransfer.files[0];
+      setFile(file);
+    });
+
+    async function compress() {
+      if (!currentFile || isCompressing) return;
+      if (!window.pdfjsLib || !window.jspdf) {
+        statusEl.textContent = 'The PDF tools could not load. Check your internet connection and refresh the page.';
+        return;
+      }
+      const selectedPreset = document.querySelector('input[name="preset"]:checked');
+      const { dpi, quality } = PRESETS[selectedPreset ? selectedPreset.value : 'medium'];
+      isCompressing = true;
+      goBtn.disabled = true;
+      goBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Compressing…';
+      result.style.display = 'none';
+      progressWrap.style.display = 'block';
+      setProgress(0, 'Preparing your PDF…');
+      statusEl.textContent = 'Your file is being processed locally in this browser.';
+
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
+        const data = new Uint8Array(await currentFile.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        const { jsPDF } = window.jspdf;
+        let out = null;
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          setProgress(((i - 1) / pdf.numPages) * 100, 'Compressing page ' + i + ' of ' + pdf.numPages + '…');
+          const page = await pdf.getPage(i);
+          const base = page.getViewport({ scale: 1 });
+          const viewport = page.getViewport({ scale: dpi / 72 });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.floor(viewport.width));
+          canvas.height = Math.max(1, Math.floor(viewport.height));
+          const ctx = canvas.getContext('2d', { alpha: false });
+          if (!ctx) throw new Error('Canvas is not supported by this browser.');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          const img = canvas.toDataURL('image/jpeg', quality);
+          const orientation = base.width > base.height ? 'landscape' : 'portrait';
+          if (!out) {
+            out = new jsPDF({ unit: 'pt', format: [base.width, base.height], orientation, compress: true });
+          } else {
+            out.addPage([base.width, base.height], orientation);
+          }
+          out.addImage(img, 'JPEG', 0, 0, base.width, base.height, undefined, 'FAST');
+          canvas.width = 0;
+          canvas.height = 0;
+          page.cleanup();
+          setProgress((i / pdf.numPages) * 100, 'Compressing page ' + i + ' of ' + pdf.numPages + '…');
+        }
+
+        const blob = out.output('blob');
+        if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+        downloadUrl = URL.createObjectURL(blob);
+        const change = (1 - blob.size / currentFile.size) * 100;
+        $('sizeBefore').textContent = fmt(currentFile.size);
+        $('sizeAfter').textContent = fmt(blob.size);
+        $('saved').textContent = change > 0 ? change.toFixed(0) + '% smaller' : Math.abs(change).toFixed(0) + '% larger';
+        result.classList.toggle('bad', change <= 0);
+        $('resultHeading').textContent = change > 0 ? 'Your PDF is ready' : 'Compression complete';
+        const dl = $('download');
+        dl.href = downloadUrl;
+        dl.download = currentFile.name.replace(/\.pdf$/i, '') + '_compressed.pdf';
+        result.style.display = 'block';
+        setProgress(100, 'Finished');
+        statusEl.textContent = change > 0
+          ? 'Done. Your compressed PDF is ready to download.'
+          : 'This version is larger than the original. You can still download it or try another compression level.';
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = 'Compression failed. The PDF may be damaged, password-protected, or too large for available memory. Check your connection and try again.';
+      } finally {
+        isCompressing = false;
+        goBtn.disabled = !currentFile;
+        goBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Compress PDF';
+      }
+    }
+
+    goBtn.addEventListener('click', compress);
+    window.addEventListener('beforeunload', () => {
+      if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    });
+  </script>
+</body>
+</html>
